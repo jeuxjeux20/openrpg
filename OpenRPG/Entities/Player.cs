@@ -74,6 +74,6 @@ namespace OpenRPG.Entities
         /// The channel where the user was last seen.
         /// </summary>
         [NotMapped]
-        public ISocketMessageChannel LastChannel { get; set; }
+        public IMessageChannel LastChannel { get; set; }
     }
 }

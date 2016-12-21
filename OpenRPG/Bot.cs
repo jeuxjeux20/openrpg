@@ -36,9 +36,7 @@ namespace OpenRPG
             await InstallCommands();
             await _client.LoginAsync(TokenType.Bot, File.ReadAllText("token.txt"));
             await _client.ConnectAsync();
-
-            PlayerManager.Load();
-
+            await PlayerManager.Load();
             await Task.Delay(-1);
         }
 

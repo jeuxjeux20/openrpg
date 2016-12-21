@@ -32,11 +32,12 @@ namespace OpenRPG.Game
         /// <summary>
         /// Load the world.
         /// </summary>
-        public void Load()
+        public async Task Load()
         {
             foreach (var player in _context.Players)
             {
                 player.User = _client.GetUser(player.UserId);
+                player.LastChannel = await _client.GetPrivateChannelAsync(player.UserId) as IMessageChannel;
                 Players.AddOrUpdate(player.UserId, player, (k, v) => player);
             }
         }
@@ -74,6 +75,7 @@ namespace OpenRPG.Game
 
             if (!Players.TryAdd(player.UserId, player)) return false;
             player.User = _client.GetUser(player.UserId);
+            player.LastChannel = await _client.GetPrivateChannelAsync(player.UserId) as IMessageChannel;
             await _context.Players.AddAsync(player);
             await _context.SaveChangesAsync();
             return true;
