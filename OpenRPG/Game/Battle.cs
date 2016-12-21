@@ -156,7 +156,7 @@ namespace OpenRPG.Game
         {
             Attacker.Battle = null;
             Opponent.Battle = null;
-            Active = true;
+            Active = false;
         }
     }
 }
