@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Discord.API;
 using OpenRPG.Entities;
 using OpenRPG.Interfaces;
 
@@ -142,11 +143,12 @@ namespace OpenRPG.Game
         /// <summary>
         /// Start the battle.
         /// </summary>
-        public void Start()
+        public async Task Start()
         {
             Attacker.Battle = this;
             Opponent.Battle = this;
             Active = true;
+            await SendMessage($":crossed_swords: {Attacker.Name} started to attack {Opponent.Name}!");
         }
 
         /// <summary>
