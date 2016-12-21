@@ -49,6 +49,7 @@ namespace OpenRPG.Game
         /// <returns></returns>
         public Player GetPlayer(IUser user)
         {
+            if (user == null) return null;
             Player player;
             Players.TryGetValue(user.Id, out player);
             return player;
