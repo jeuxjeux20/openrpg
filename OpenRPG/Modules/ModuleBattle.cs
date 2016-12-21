@@ -20,8 +20,7 @@ namespace OpenRPG.Modules
         /// </summary>
         /// <returns></returns>
         [Command("attack")]
-        [MustBeRegistered]
-        [MustBeInBattle]
+        [MustBeRegistered, MustBeInBattle]
         public async Task Attack()
         {
             var player = _playerManager.GetPlayer(Context.User);
@@ -42,15 +41,10 @@ namespace OpenRPG.Modules
         /// </summary>
         /// <returns></returns>
         [Command("test")]
+        [MustBeRegistered, MustNotBeInBattle]
         public async Task Test()
         {
             var player = _playerManager.GetPlayer(Context.User);
-
-            if (player.Battle != null)
-            {
-                await ReplyAsync("You are already in a battle.");
-                return;
-            }
 
             await ReplyAsync("You are now in a test battle.");
             var npc = new Npc
@@ -70,18 +64,11 @@ namespace OpenRPG.Modules
         /// </summary>
         /// <returns></returns>
         [Command("leave")]
-        [MustBeRegistered]
+        [MustBeRegistered, MustBeInBattle]
         public async Task Leave()
         {
             var player = _playerManager.GetPlayer(Context.User);
-            var battle = player?.Battle;
-
-            if (battle == null)
-            {
-                await ReplyAsync("You are not in a battle.");
-                return;
-            }
-
+            var battle = player.Battle;
             await battle.Leave(player);
         }
 
@@ -90,9 +77,9 @@ namespace OpenRPG.Modules
         /// </summary>
         /// <returns></returns>
         [Command("battle")]
-        [MustBeRegistered]
+        [MustBeRegistered, MustNotBeInBattle]
         public async Task Battle(
-            [ParameterMustBeRegistered, Summary("The user to battle")] IUser user
+            [Summary("The user to battle"), ParameterMustBeRegistered, ParameterMustNotBeItself] IUser user
         )
         {
             var attacker = _playerManager.GetPlayer(Context.User);
