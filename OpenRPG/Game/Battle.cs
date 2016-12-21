@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Discord;
+using OpenRPG.Entities;
 using OpenRPG.Interfaces;
 
 namespace OpenRPG.Game
 {
     public class Battle : IDisposable
     {
+        public bool Active;
         public bool Leaveable;
         public readonly IAttackable Attacker;
         public readonly IAttackable Opponent;
         public IAttackable CurrentAttacker;
         private readonly Random _random;
-        private readonly IMessageChannel _messageChannel;
 
-        public Battle(IMessageChannel messageChannel, IAttackable attacker, IAttackable opponent)
+        public Battle(IAttackable attacker, IAttackable opponent)
         {
-            _messageChannel = messageChannel;
             _random = new Random();
             Attacker = attacker;
             Opponent = opponent;
@@ -47,7 +46,7 @@ namespace OpenRPG.Game
         /// <returns></returns>
         public async Task<bool> Attack()
         {
-            if (Attacker.Health <= 0 || Opponent.Health <= 0) return false;
+            if (!Active || Attacker.Health <= 0 || Opponent.Health <= 0) return false;
 
             string message;
             var target = GetNextAttacker();
@@ -73,7 +72,7 @@ namespace OpenRPG.Game
             message += $"\n:heavy_minus_sign: {Attacker.Name} - {Attacker.Health} / {Attacker.MaxHealth}";
             message += $"\n:heavy_minus_sign: {Opponent.Name} - {Opponent.Health} / {Opponent.MaxHealth}";
 
-            await _messageChannel.SendMessageAsync(message);
+            await SendMessage(message);
             return true;
         }
 
@@ -82,9 +81,11 @@ namespace OpenRPG.Game
         /// </summary>
         public async Task<bool> Next()
         {
+            if (!Active) return false;
+
             if (Attacker.Health <= 0 || Opponent.Health <= 0)
             {
-                await _messageChannel.SendMessageAsync("Battle ended! Winner: " + GetWinner().Name);
+                await SendMessage("Battle ended! Winner: " + GetWinner().Name);
                 Dispose();
                 return false;
             }
@@ -100,17 +101,52 @@ namespace OpenRPG.Game
             return await Next();
         }
 
-        public async Task Leave()
+        /// <summary>
+        /// Leave the battle.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> Leave(IAttackable attackable)
         {
-            if (Leaveable)
+            if (attackable != Attacker && attackable != Opponent)
+                throw new ArgumentException("The attackable is not in this battle!");
+
+            if (!Leaveable)
             {
-                await _messageChannel.SendMessageAsync("You left the battle.");
-                Dispose();
+                var channel = (Attacker as Player)?.LastChannel;
+                if (channel != null) await channel.SendMessageAsync("You cannot leave this battle.");
+                return false;
             }
-            else
-            {
-                await _messageChannel.SendMessageAsync("You cannot leave this battle.");
-            }
+
+            await SendMessage($"{attackable.Name} left the battle.");
+            Dispose();
+            return true;
+        }
+
+        /// <summary>
+        /// Send a message to both the attacker and opponent.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        protected async Task SendMessage(string message)
+        {
+            var attacker = Attacker as Player;
+            var opponent = Opponent as Player;
+
+            if (attacker?.LastChannel != null)
+                await attacker.LastChannel.SendMessageAsync(message);
+
+            if (opponent?.LastChannel != null && opponent.LastChannel != attacker?.LastChannel)
+                await opponent.LastChannel.SendMessageAsync(message);
+        }
+
+        /// <summary>
+        /// Start the battle.
+        /// </summary>
+        public void Start()
+        {
+            Attacker.Battle = this;
+            Opponent.Battle = this;
+            Active = true;
         }
 
         /// <summary>
@@ -120,6 +156,7 @@ namespace OpenRPG.Game
         {
             Attacker.Battle = null;
             Opponent.Battle = null;
+            Active = false;
         }
     }
 }

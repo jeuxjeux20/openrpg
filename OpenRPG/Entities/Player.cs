@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using Discord;
+using Discord.WebSocket;
 using OpenRPG.Game;
 using OpenRPG.Interfaces;
 
@@ -19,9 +20,9 @@ namespace OpenRPG.Entities
         public ulong UserId { get; set; }
 
         /// <summary>
-        /// The ID of the guild.
+        /// The amount of money that the player owns.
         /// </summary>
-        public ulong GuildId { get; set; }
+        public int Money { get; set; }
 
         /// <summary>
         /// The points that the user can spent on stats.
@@ -68,5 +69,11 @@ namespace OpenRPG.Entities
         /// </summary>
         [NotMapped]
         public Battle Battle { get; set; }
+
+        /// <summary>
+        /// The channel where the user was last seen.
+        /// </summary>
+        [NotMapped]
+        public IMessageChannel LastChannel { get; set; }
     }
 }
