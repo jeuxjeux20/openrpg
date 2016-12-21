@@ -88,7 +88,7 @@ namespace OpenRPG.Modules
             }
 
             await ReplyAsync("You are now in a test battle.");
-            player.Battle = new Battle(Context.Channel, player, new Npc
+            player.Battle = new Battle(player, new Npc
             {
                 Name = "NPC",
                 Attack = 10,
@@ -117,7 +117,7 @@ namespace OpenRPG.Modules
                 return;
             }
 
-            await battle.Leave();
+            await battle.Leave(player);
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace OpenRPG.Modules
                 return;
             }
 
-            var battle = new Battle(Context.Channel, attacker, target);
+            var battle = new Battle(attacker, target);
             attacker.Battle = battle;
             target.Battle = battle;
             await ReplyAsync("You are now in battle!");
@@ -193,7 +193,7 @@ namespace OpenRPG.Modules
                 .AddField(builder =>
                 {
                     builder.Name = "Money:";
-                    builder.Value = string.Format(":money_with_wings: {0}", player.Money);
+                    builder.Value = string.Format(":money_with_wings: {0}$", player.Money);
                     builder.IsInline = true;
                 }));
         }

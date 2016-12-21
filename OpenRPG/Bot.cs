@@ -74,6 +74,8 @@ namespace OpenRPG
                   || message.HasMentionPrefix(_client.CurrentUser, ref argPos)))
                 return;
 
+            var player = PlayerManager.GetPlayer(message.Author);
+            if (player != null) player.LastChannel = message.Channel;
             var context = new CommandContext(_client, message);
             var result = await _commands.ExecuteAsync(context, argPos, _map);
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)

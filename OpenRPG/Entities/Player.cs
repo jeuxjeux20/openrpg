@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using Discord;
+using Discord.WebSocket;
 using OpenRPG.Game;
 using OpenRPG.Interfaces;
 
@@ -68,5 +69,11 @@ namespace OpenRPG.Entities
         /// </summary>
         [NotMapped]
         public Battle Battle { get; set; }
+
+        /// <summary>
+        /// The channel where the user was last seen.
+        /// </summary>
+        [NotMapped]
+        public ISocketMessageChannel LastChannel { get; set; }
     }
 }
