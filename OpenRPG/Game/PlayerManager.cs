@@ -1,30 +1,44 @@
 ﻿using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Discord.WebSocket;
 using OpenRPG.Entities;
 
 namespace OpenRPG.Game
 {
-    public class World
+    public class PlayerManager
     {
         /// <summary>
         /// The database context.
         /// </summary>
         private readonly Context _context;
 
-        private readonly IGuild _guild;
+        /// <summary>
+        /// The Discord Client.
+        /// </summary>
+        private readonly DiscordSocketClient _client;
+
+        public PlayerManager(Context context, DiscordSocketClient client)
+        {
+            _context = context;
+            _client = client;
+        }
 
         /// <summary>
         /// The players in this world. The id is the key.
         /// </summary>
         public ConcurrentDictionary<ulong, Player> Players = new ConcurrentDictionary<ulong, Player>();
 
-        public World(Context context, IGuild guild)
+        /// <summary>
+        /// Load the world.
+        /// </summary>
+        public void Load()
         {
-            _context = context;
-            _guild = guild;
-            Load();
+            foreach (var player in _context.Players)
+            {
+                player.User = _client.GetUser(player.UserId);
+                Players.AddOrUpdate(player.UserId, player, (k, v) => player);
+            }
         }
 
         /// <summary>
@@ -40,40 +54,26 @@ namespace OpenRPG.Game
         }
 
         /// <summary>
-        /// Load the world.
-        /// </summary>
-        private void Load()
-        {
-            var players = _context.Players
-                .Where(player => player.GuildId == _guild.Id)
-                .ToList();
-
-            foreach (var player in players)
-            {
-                player.User = _guild.GetUserAsync(player.UserId).Result;
-                Players.AddOrUpdate(player.UserId, player, (k, v) => player);
-            }
-        }
-
-        /// <summary>
         /// Register a new user to the world.
         /// </summary>
         /// <param name="user">The user</param>
         /// <returns></returns>
         public async Task<bool> Register(IUser user)
         {
+            if (!Players.ContainsKey(user.Id)) return false;
+
             var player = new Player
             {
                 UserId = user.Id,
-                GuildId = _guild.Id,
                 Attack = 10,
                 Defend = 10,
                 MaxHealth = 100,
-                Health = 100
+                Health = 100,
+                Money = 100
             };
 
             if (!Players.TryAdd(player.UserId, player)) return false;
-            player.User = await _guild.GetUserAsync(player.UserId);
+            player.User = _client.GetUser(player.UserId);
             await _context.Players.AddAsync(player);
             await _context.SaveChangesAsync();
             return true;

@@ -19,9 +19,9 @@ namespace OpenRPG.Entities
         public ulong UserId { get; set; }
 
         /// <summary>
-        /// The ID of the guild.
+        /// The amount of money that the player owns.
         /// </summary>
-        public ulong GuildId { get; set; }
+        public int Money { get; set; }
 
         /// <summary>
         /// The points that the user can spent on stats.

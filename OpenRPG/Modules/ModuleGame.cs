@@ -8,12 +8,12 @@ namespace OpenRPG.Modules
     public class ModuleGame : ModuleBase
     {
         private readonly Context _context;
-        private readonly WorldManager _worldManager;
+        private readonly PlayerManager _playerManager;
 
-        public ModuleGame(Context context, WorldManager worldManager)
+        public ModuleGame(Context context, PlayerManager playerManager)
         {
             _context = context;
-            _worldManager = worldManager;
+            _playerManager = playerManager;
         }
 
         /// <summary>
@@ -40,12 +40,10 @@ namespace OpenRPG.Modules
         [Command("register")]
         public async Task Register()
         {
-            var world = _worldManager.GetForGuild(Context.Guild);
-
-            if (await world.Register(Context.User))
-                await ReplyAsync("You're now part of the world.");
+            if (await _playerManager.Register(Context.User))
+                await ReplyAsync($"And so the adventure of {Context.User.Username} begon!");
             else
-                await ReplyAsync("Your character could not be created. Are you already in the world?");
+                await ReplyAsync("You already have an account.");
         }
 
         /// <summary>
@@ -55,7 +53,7 @@ namespace OpenRPG.Modules
         [Command("attack")]
         public async Task Attack()
         {
-            var player = _worldManager.GetForGuild(Context.Guild).GetPlayer(Context.User);
+            var player = _playerManager.GetPlayer(Context.User);
             var battle = player?.Battle;
 
             if (battle == null)
@@ -81,7 +79,7 @@ namespace OpenRPG.Modules
         [Command("test")]
         public async Task Test()
         {
-            var player = _worldManager.GetForGuild(Context.Guild).GetPlayer(Context.User);
+            var player = _playerManager.GetPlayer(Context.User);
 
             if (player.Battle != null)
             {
@@ -110,7 +108,7 @@ namespace OpenRPG.Modules
         [Command("leave")]
         public async Task Leave()
         {
-            var player = _worldManager.GetForGuild(Context.Guild).GetPlayer(Context.User);
+            var player = _playerManager.GetPlayer(Context.User);
             var battle = player?.Battle;
 
             if (battle == null)
@@ -129,8 +127,8 @@ namespace OpenRPG.Modules
         [Command("battle")]
         public async Task Battle([Summary("The (optional) user to get stats for")] IUser user = null)
         {
-            var attacker = _worldManager.GetForGuild(Context.Guild).GetPlayer(Context.User);
-            var target = _worldManager.GetForGuild(Context.Guild).GetPlayer(user);
+            var attacker = _playerManager.GetPlayer(Context.User);
+            var target = _playerManager.GetPlayer(user);
 
             if (attacker == null)
             {
@@ -157,7 +155,7 @@ namespace OpenRPG.Modules
         [Command("stats")]
         public async Task Stats([Summary("The (optional) user to get stats for")] IUser user = null)
         {
-            var player = _worldManager.GetForGuild(Context.Guild).GetPlayer(user ?? Context.User);
+            var player = _playerManager.GetPlayer(user ?? Context.User);
 
             if (player == null)
             {
@@ -190,6 +188,12 @@ namespace OpenRPG.Modules
                 {
                     builder.Name = "Defend points:";
                     builder.Value = string.Format(":shield: {0}", player.Defend);
+                    builder.IsInline = true;
+                })
+                .AddField(builder =>
+                {
+                    builder.Name = "Money:";
+                    builder.Value = string.Format(":money_with_wings: {0}", player.Money);
                     builder.IsInline = true;
                 }));
         }

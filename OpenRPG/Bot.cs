@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
@@ -13,13 +14,12 @@ namespace OpenRPG
         private CommandService _commands;
         private DiscordSocketClient _client;
         private DependencyMap _map;
-        public readonly WorldManager WorldManager;
+        public PlayerManager PlayerManager;
         public readonly Context Context;
 
         public Bot()
         {
             Context = new Context();
-            WorldManager = new WorldManager(Context);
         }
 
         /// <summary>
@@ -31,10 +31,14 @@ namespace OpenRPG
             await Context.Database.EnsureCreatedAsync();
 
             _client = new DiscordSocketClient();
+            PlayerManager = new PlayerManager(Context, _client);
 
             await InstallCommands();
             await _client.LoginAsync(TokenType.Bot, File.ReadAllText("token.txt"));
             await _client.ConnectAsync();
+
+            PlayerManager.Load();
+
             await Task.Delay(-1);
         }
 
@@ -46,7 +50,7 @@ namespace OpenRPG
         {
             _map = new DependencyMap();
             _map.Add(Context);
-            _map.Add(WorldManager);
+            _map.Add(PlayerManager);
             _commands = new CommandService();
             _client.MessageReceived += HandleCommand;
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
@@ -59,21 +63,21 @@ namespace OpenRPG
         /// <returns></returns>
         public async Task HandleCommand(SocketMessage messageParam)
         {
+            if (messageParam.Author.IsBot) return;
+
             var message = messageParam as SocketUserMessage;
             if (message == null) return;
 
             var argPos = 0;
-            if (!(message.HasCharPrefix('•', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos)))
-            {
+            if (!(message.Channel is ISocketPrivateChannel
+                  || message.HasCharPrefix('•', ref argPos)
+                  || message.HasMentionPrefix(_client.CurrentUser, ref argPos)))
                 return;
-            }
 
             var context = new CommandContext(_client, message);
             var result = await _commands.ExecuteAsync(context, argPos, _map);
-            if (!result.IsSuccess)
-            {
+            if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 await message.Channel.SendMessageAsync(result.ErrorReason);
-            }
         }
     }
 }
