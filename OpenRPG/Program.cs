@@ -4,7 +4,7 @@
     {
         public static void Main(string[] args)
         {
-            Bot.Instance.Start().GetAwaiter().GetResult();
+            new Bot().Start().GetAwaiter().GetResult();
         }
     }
 }

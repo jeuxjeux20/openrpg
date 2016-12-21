@@ -36,20 +36,10 @@ namespace OpenRPG
         /// </summary>
         public readonly Context Context;
 
-        /// <summary>
-        /// The instance of the bot.
-        /// </summary>
-        private static Bot _instance;
-
         public Bot()
         {
             Context = new Context();
         }
-
-        /// <summary>
-        /// Get the bot instance.
-        /// </summary>
-        public static Bot Instance => _instance ?? (_instance = new Bot());
 
         /// <summary>
         /// Start the bot.
@@ -77,6 +67,7 @@ namespace OpenRPG
         public async Task InstallCommands()
         {
             _map = new DependencyMap();
+            _map.Add(this);
             _map.Add(Context);
             _map.Add(PlayerManager);
             _commands = new CommandService();

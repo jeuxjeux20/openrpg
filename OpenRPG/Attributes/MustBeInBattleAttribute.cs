@@ -8,7 +8,7 @@ namespace OpenRPG.Attributes
         public override Task<PreconditionResult> CheckPermissions(CommandContext context, CommandInfo command,
             IDependencyMap map)
         {
-            var me = Bot.Instance.PlayerManager.GetPlayer(context.User);
+            var me = map.Get<Bot>().PlayerManager.GetPlayer(context.User);
             return Task.FromResult(me?.Battle == null ? PreconditionResult.FromError("You aren't in battle.") : PreconditionResult.FromSuccess());
         }
     }
