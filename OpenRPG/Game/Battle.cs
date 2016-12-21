@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Discord;
 using OpenRPG.Entities;
 using OpenRPG.Interfaces;
 
@@ -8,6 +7,7 @@ namespace OpenRPG.Game
 {
     public class Battle : IDisposable
     {
+        public bool Active;
         public bool Leaveable;
         public readonly IAttackable Attacker;
         public readonly IAttackable Opponent;
@@ -46,7 +46,7 @@ namespace OpenRPG.Game
         /// <returns></returns>
         public async Task<bool> Attack()
         {
-            if (Attacker.Health <= 0 || Opponent.Health <= 0) return false;
+            if (!Active || Attacker.Health <= 0 || Opponent.Health <= 0) return false;
 
             string message;
             var target = GetNextAttacker();
@@ -81,6 +81,8 @@ namespace OpenRPG.Game
         /// </summary>
         public async Task<bool> Next()
         {
+            if (!Active) return false;
+
             if (Attacker.Health <= 0 || Opponent.Health <= 0)
             {
                 await SendMessage("Battle ended! Winner: " + GetWinner().Name);
@@ -120,6 +122,11 @@ namespace OpenRPG.Game
             return true;
         }
 
+        /// <summary>
+        /// Send a message to both the attacker and opponent.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
         protected async Task SendMessage(string message)
         {
             var attacker = Attacker as Player;
@@ -133,12 +140,23 @@ namespace OpenRPG.Game
         }
 
         /// <summary>
+        /// Start the battle.
+        /// </summary>
+        public void Start()
+        {
+            Attacker.Battle = this;
+            Opponent.Battle = this;
+            Active = true;
+        }
+
+        /// <summary>
         /// Dispose the battle.
         /// </summary>
         public void Dispose()
         {
             Attacker.Battle = null;
             Opponent.Battle = null;
+            Active = true;
         }
     }
 }

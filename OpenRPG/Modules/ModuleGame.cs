@@ -88,17 +88,15 @@ namespace OpenRPG.Modules
             }
 
             await ReplyAsync("You are now in a test battle.");
-            player.Battle = new Battle(player, new Npc
+            var battle = new Battle(player, new Npc
             {
                 Name = "NPC",
                 Attack = 10,
                 Defend = 10,
                 Health = 50,
                 MaxHealth = 50
-            })
-            {
-                Leaveable = true
-            };
+            }) { Leaveable = true };
+            battle.Start();
         }
 
         /// <summary>
@@ -143,8 +141,7 @@ namespace OpenRPG.Modules
             }
 
             var battle = new Battle(attacker, target);
-            attacker.Battle = battle;
-            target.Battle = battle;
+            battle.Start();
             await ReplyAsync("You are now in battle!");
         }
 
