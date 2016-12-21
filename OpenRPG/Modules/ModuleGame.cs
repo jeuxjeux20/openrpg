@@ -1,18 +1,17 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using OpenRPG.Attributes;
 using OpenRPG.Game;
 
 namespace OpenRPG.Modules
 {
     public class ModuleGame : ModuleBase
     {
-        private readonly Context _context;
         private readonly PlayerManager _playerManager;
 
-        public ModuleGame(Context context, PlayerManager playerManager)
+        public ModuleGame(PlayerManager playerManager)
         {
-            _context = context;
             _playerManager = playerManager;
         }
 
@@ -51,16 +50,12 @@ namespace OpenRPG.Modules
         /// </summary>
         /// <returns></returns>
         [Command("attack")]
+        [MustBeRegistered]
+        [MustBeInBattle]
         public async Task Attack()
         {
             var player = _playerManager.GetPlayer(Context.User);
-            var battle = player?.Battle;
-
-            if (battle == null)
-            {
-                await ReplyAsync("You are not in a battle.");
-                return;
-            }
+            var battle = player.Battle;
 
             if (battle.CurrentAttacker != player)
             {
@@ -104,6 +99,7 @@ namespace OpenRPG.Modules
         /// </summary>
         /// <returns></returns>
         [Command("leave")]
+        [MustBeRegistered]
         public async Task Leave()
         {
             var player = _playerManager.GetPlayer(Context.User);
@@ -123,22 +119,13 @@ namespace OpenRPG.Modules
         /// </summary>
         /// <returns></returns>
         [Command("battle")]
-        public async Task Battle([Summary("The (optional) user to get stats for")] IUser user = null)
+        [MustBeRegistered]
+        public async Task Battle(
+            [ParameterMustBeRegistered, Summary("The user to battle")] IUser user
+        )
         {
             var attacker = _playerManager.GetPlayer(Context.User);
             var target = _playerManager.GetPlayer(user);
-
-            if (attacker == null)
-            {
-                await ReplyAsync("You're not part of the world.");
-                return;
-            }
-
-            if (target == null)
-            {
-                await ReplyAsync("This user isn't part of the world.");
-                return;
-            }
 
             var battle = new Battle(attacker, target);
             battle.Start();
@@ -150,15 +137,10 @@ namespace OpenRPG.Modules
         /// </summary>
         /// <returns></returns>
         [Command("stats")]
-        public async Task Stats([Summary("The (optional) user to get stats for")] IUser user = null)
+        [MustBeRegistered]
+        public async Task Stats()
         {
-            var player = _playerManager.GetPlayer(user ?? Context.User);
-
-            if (player == null)
-            {
-                await ReplyAsync("This user isn't part of the world.");
-                return;
-            }
+            var player = _playerManager.GetPlayer(Context.User);
 
             await ReplyAsync("", embed: new EmbedBuilder()
                 .WithTitle($"Stats for {Context.User.Username}")

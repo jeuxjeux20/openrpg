@@ -11,16 +11,45 @@ namespace OpenRPG
 {
     public class Bot
     {
+        /// <summary>
+        /// The commands service.
+        /// </summary>
         private CommandService _commands;
+
+        /// <summary>
+        /// The discord client.
+        /// </summary>
         private DiscordSocketClient _client;
+
+        /// <summary>
+        /// The dependency map.
+        /// </summary>
         private DependencyMap _map;
-        public PlayerManager PlayerManager;
+
+        /// <summary>
+        /// The player manager.
+        /// </summary>
+        public PlayerManager PlayerManager { get; private set; }
+
+        /// <summary>
+        /// The database context.
+        /// </summary>
         public readonly Context Context;
+
+        /// <summary>
+        /// The instance of the bot.
+        /// </summary>
+        private static Bot _instance;
 
         public Bot()
         {
             Context = new Context();
         }
+
+        /// <summary>
+        /// Get the bot instance.
+        /// </summary>
+        public static Bot Instance => _instance ?? (_instance = new Bot());
 
         /// <summary>
         /// Start the bot.
@@ -37,6 +66,7 @@ namespace OpenRPG
             await _client.LoginAsync(TokenType.Bot, File.ReadAllText("token.txt"));
             await _client.ConnectAsync();
             await PlayerManager.Load();
+            Console.WriteLine("OpenRPG Loaded.");
             await Task.Delay(-1);
         }
 
@@ -66,8 +96,9 @@ namespace OpenRPG
             var message = messageParam as SocketUserMessage;
             if (message == null) return;
 
+            var isPrivateMessage = message.Channel is ISocketPrivateChannel;
             var argPos = 0;
-            if (!(message.Channel is ISocketPrivateChannel
+            if (!(isPrivateMessage
                   || message.HasCharPrefix('•', ref argPos)
                   || message.HasMentionPrefix(_client.CurrentUser, ref argPos)))
                 return;
@@ -76,7 +107,7 @@ namespace OpenRPG
             if (player != null) player.LastChannel = message.Channel;
             var context = new CommandContext(_client, message);
             var result = await _commands.ExecuteAsync(context, argPos, _map);
-            if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
+            if (!result.IsSuccess && (result.Error != CommandError.UnknownCommand || isPrivateMessage))
                 await message.Channel.SendMessageAsync(result.ErrorReason);
         }
     }
