@@ -152,6 +152,16 @@ namespace OpenRPG.Game
         }
 
         /// <summary>
+        /// Get the team for the attackable.
+        /// </summary>
+        /// <param name="attacker"></param>
+        /// <returns></returns>
+        public List<IAttackable> GetTeam(IAttackable attacker)
+        {
+            return Attackers.Contains(attacker) ? Attackers : Opponents;
+        }
+
+        /// <summary>
         /// Attack action.
         /// </summary>
         /// <param name="attacker"></param>
@@ -268,7 +278,31 @@ namespace OpenRPG.Game
         /// <returns></returns>
         public async Task<bool> Leave(IAttackable attackable)
         {
-            throw new NotImplementedException();
+            if (!Attackables.Contains(attackable)) throw new ArgumentException("The attackable is not in this battle!");
+
+            if (!Leaveable)
+            {
+                var channel = (attackable as Player)?.LastChannel;
+                if (channel != null) await channel.SendMessageAsync("You cannot leave this battle.");
+                return false;
+            }
+
+            var message = $":door: **{attackable.Name}** left the battle.";
+            var team = GetTeam(attackable);
+
+            if (team.Count == 1)
+            {
+                message += "\n:heavy_minus_sign: The battle has ended.";
+                Dispose();
+            }
+
+            await SendMessage(message);
+
+            team.Remove(attackable);
+            attackable.Battle = null;
+
+            if (EveryoneReady) await Next();
+            return true;
         }
 
         /// <summary>
