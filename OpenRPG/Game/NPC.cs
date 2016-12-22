@@ -15,13 +15,15 @@ namespace OpenRPG.Game
 
         public int Defend { get; set; }
 
+        public int Speed { get; set; }
+
         public Battle Battle { get; set; }
 
         public async Task ProgressBattle(Battle battle)
         {
             // This is a stupid NPC. It only knows how to attack.
             // In the future we want the NPC to heal etc.
-            await battle.Attack();
+            await battle.SetAction(this, BattleAction.Attack);
         }
     }
 }

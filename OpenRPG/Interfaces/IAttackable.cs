@@ -30,6 +30,11 @@ namespace OpenRPG.Interfaces
         int Defend { get; }
 
         /// <summary>
+        /// The speed points of the entity.
+        /// </summary>
+        int Speed { get; }
+
+        /// <summary>
         /// The battle where the user is currently in.
         /// </summary>
         Battle Battle { get; set; }

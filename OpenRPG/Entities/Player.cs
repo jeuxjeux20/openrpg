@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using Discord;
-using Discord.WebSocket;
 using OpenRPG.Game;
 using OpenRPG.Interfaces;
 
@@ -48,6 +47,11 @@ namespace OpenRPG.Entities
         /// The defend points of the user.
         /// </summary>
         public int Defend { get; set; }
+
+        /// <summary>
+        /// The speed points of the user.
+        /// </summary>
+        public int Speed { get; set; }
 
         /// <summary>
         /// The items of the player.

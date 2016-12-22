@@ -62,13 +62,14 @@ namespace OpenRPG.Game
         /// <returns></returns>
         public async Task<bool> Register(IUser user)
         {
-            if (!Players.ContainsKey(user.Id)) return false;
+            if (Players.ContainsKey(user.Id)) return false;
 
             var player = new Player
             {
                 UserId = user.Id,
                 Attack = 10,
                 Defend = 10,
+                Speed = 1,
                 MaxHealth = 100,
                 Health = 100,
                 Money = 100

@@ -84,6 +84,12 @@ namespace OpenRPG.Modules
                 })
                 .AddField(builder =>
                 {
+                    builder.Name = "Speed:";
+                    builder.Value = string.Format(":mans_shoe: {0}", player.Speed);
+                    builder.IsInline = true;
+                })
+                .AddField(builder =>
+                {
                     builder.Name = "Money:";
                     builder.Value = string.Format(":money_with_wings: {0}$", player.Money);
                     builder.IsInline = true;
