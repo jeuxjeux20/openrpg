@@ -250,7 +250,7 @@ namespace OpenRPG.Game
                 var current = new string('x', currentHealth);
                 var left = new string(' ', 15 - currentHealth);
                 var checkbox = selected == -1 || a.Health == 0 ? "-" : (selected == i ? "x" : " ");
-                messages.Add($"[{checkbox}] {i + 1}. {a.Name,-15} {a.Health,3} [{current}{left}] {a.MaxHealth,-3}");
+                messages.Add($"[{checkbox}] {i + 1}. {a.Name,-15} {a.Health,3} [{current + left}] {a.MaxHealth,-3}");
             }
         }
 
