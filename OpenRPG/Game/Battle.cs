@@ -52,7 +52,9 @@ namespace OpenRPG.Game
         /// Check if everyone is ready.
         /// </summary>
         /// <returns></returns>
-        public bool EveryoneReady => Attackables.Where(a => a.Health > 0).All(a => Actions[a] != BattleAction.None);
+        public bool EveryoneReady => Attackables
+            .Where(a => a.Health > 0)
+            .All(a => Actions[a] != BattleAction.None);
 
         /// <summary>
         /// Get the winners.
@@ -82,7 +84,7 @@ namespace OpenRPG.Game
         /// </summary>
         private void ResetActions()
         {
-            foreach (var attackable in Actions.Keys) Actions[attackable] = BattleAction.None;
+            foreach (var attackable in Attackables) Actions[attackable] = BattleAction.None;
         }
 
         /// <summary>
@@ -187,11 +189,11 @@ namespace OpenRPG.Game
         {
             if (!EveryoneReady || !Active) return;
 
-            var attackables = Attackables.ToArray();
             var messages = new List<string>();
-            foreach (var attacker in attackables)
+            foreach (var attacker in Attackables)
             {
                 if (attacker.Health <= 0) continue;
+
                 var action = Actions[attacker];
                 var targets = GetTargets(attacker);
                 var target = targets.ElementAtOrDefault(Targets[attacker]) ?? targets.First();
