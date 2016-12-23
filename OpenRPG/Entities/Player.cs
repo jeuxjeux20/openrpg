@@ -110,5 +110,7 @@ namespace OpenRPG.Entities
             Points += Level - oldLevel;
             return Level - oldLevel;
         }
+
+        public byte CriticalRate { get; set; } = 15;
     }
 }

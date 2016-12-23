@@ -2,3 +2,7 @@
 bin
 obj
 token.txt
+*.config
+*.user
+*.txt
+*.dg

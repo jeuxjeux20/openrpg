@@ -25,5 +25,7 @@ namespace OpenRPG.Game
             // In the future we want the NPC to heal etc.
             await battle.SetAction(this, BattleAction.Attack);
         }
+
+        public byte CriticalRate { get; set; } = 15;
     }
 }
