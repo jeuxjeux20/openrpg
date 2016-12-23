@@ -55,7 +55,7 @@ namespace OpenRPG
             await InstallCommands();
             await _client.LoginAsync(TokenType.Bot, File.ReadAllText("token.txt"));
             await _client.ConnectAsync();
-            await PlayerManager.Load();
+            PlayerManager.Load();
             Console.WriteLine("OpenRPG Loaded.");
             await Task.Delay(-1);
         }
@@ -91,6 +91,7 @@ namespace OpenRPG
             var argPos = 0;
             if (!(isPrivateMessage
                   || message.HasCharPrefix('•', ref argPos)
+                  || message.HasStringPrefix("r_", ref argPos)
                   || message.HasMentionPrefix(_client.CurrentUser, ref argPos)))
                 return;
 

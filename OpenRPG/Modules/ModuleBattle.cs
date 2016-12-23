@@ -8,11 +8,14 @@ namespace OpenRPG.Modules
 {
     public class ModuleBattle : ModuleBase
     {
+        private readonly Context _context;
+
         private readonly PlayerManager _playerManager;
 
-        public ModuleBattle(PlayerManager playerManager)
+        public ModuleBattle(PlayerManager playerManager, Context context)
         {
             _playerManager = playerManager;
+            _context = context;
         }
 
         /// <summary>
@@ -83,24 +86,18 @@ namespace OpenRPG.Modules
             var player = _playerManager.GetPlayer(Context.User);
 
             await ReplyAsync("You are now in a test battle.");
-            var goblin = new Npc
+            var battle = new Battle(_context, new [] {player}, new []
             {
-                Name = "Goblin",
-                Attack = 5,
-                Defend = 5,
-                Health = 50,
-                MaxHealth = 50
-            };
-            var spider = new Npc
-            {
-                Name = "Spider",
-                Attack = 5,
-                Defend = 1,
-                Health = 10,
-                MaxHealth = 10,
-                Speed = 10
-            };
-            var battle = new Battle(new [] {player}, new [] {goblin, spider}) {Leaveable = true};
+                new Npc
+                {
+                    Name = "Man",
+                    Attack = 5,
+                    Defend = 5,
+                    Health = 20,
+                    MaxHealth = 20,
+                    Speed = 1
+                }
+            }) {Leaveable = true};
             await battle.Start();
         }
 
@@ -121,7 +118,7 @@ namespace OpenRPG.Modules
         /// Get the stats for the player.
         /// </summary>
         /// <returns></returns>
-        [Command("battle")]
+        [Command("battle"), Alias("fight")]
         [MustBeRegistered, MustNotBeInBattle]
         public async Task Battle(
             [Summary("The user to battle"), ParameterMustBeRegistered, ParameterMustNotBeItself] IUser user
@@ -130,7 +127,7 @@ namespace OpenRPG.Modules
             var attacker = _playerManager.GetPlayer(Context.User);
             var target = _playerManager.GetPlayer(user);
 
-            var battle = new Battle(attacker, target);
+            var battle = new Battle(_context, attacker, target);
             await battle.Start();
         }
     }

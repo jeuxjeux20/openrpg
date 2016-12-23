@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Threading.Tasks;
 using Discord;
 using OpenRPG.Game;
 using OpenRPG.Interfaces;
@@ -54,6 +56,16 @@ namespace OpenRPG.Entities
         public int Speed { get; set; }
 
         /// <summary>
+        /// The speed points of the user.
+        /// </summary>
+        public int Experience { get; set; }
+
+        /// <summary>
+        /// The speed points of the user.
+        /// </summary>
+        public int Level => 1 + (int) Math.Floor(Math.Pow(Experience, 1 / 3.0));
+
+        /// <summary>
         /// The items of the player.
         /// </summary>
         public virtual List<PlayerItem> Items { get; set; }
@@ -79,5 +91,24 @@ namespace OpenRPG.Entities
         /// </summary>
         [NotMapped]
         public IMessageChannel LastChannel { get; set; }
+
+        /// <summary>
+        /// The channel that is private.
+        /// </summary>
+        [NotMapped]
+        public IMessageChannel PrivateChannel { get; set; }
+
+        /// <summary>
+        /// Add experience to the player.
+        /// </summary>
+        /// <param name="amount"></param>
+        /// <returns>The amount of levels leveled up</returns>
+        public int AddExperience(int amount)
+        {
+            var oldLevel = Level;
+            Experience += amount;
+            Points += Level - oldLevel;
+            return Level - oldLevel;
+        }
     }
 }

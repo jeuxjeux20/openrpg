@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
 using OpenRPG.Entities;
 using OpenRPG.Interfaces;
 
@@ -23,14 +22,17 @@ namespace OpenRPG.Game
         public List<IAttackable> Opponents;
         public Dictionary<IAttackable, BattleAction> Actions;
         public Dictionary<IAttackable, int> Targets;
+        public Context Context;
+        public int Turn;
 
-        public Battle(IAttackable attacker, IAttackable opponent)
-            : this(new List<IAttackable>(new[] {attacker}), new List<IAttackable>(new[] {opponent}))
+        public Battle(Context context, IAttackable attacker, IAttackable opponent)
+            : this(context, new List<IAttackable>(new[] {attacker}), new List<IAttackable>(new[] {opponent}))
         {
         }
 
-        public Battle(IEnumerable<IAttackable> attacker, IEnumerable<IAttackable> opponent)
+        public Battle(Context context, IEnumerable<IAttackable> attacker, IEnumerable<IAttackable> opponent)
         {
+            Context = context;
             _random = new Random();
             Actions = new Dictionary<IAttackable, BattleAction>();
             Targets = new Dictionary<IAttackable, int>();
@@ -114,7 +116,8 @@ namespace OpenRPG.Game
 
             Actions[attackable] = action;
             if (EveryoneReady) await Next();
-            else if (player != null) await player.LastChannel.SendMessageAsync("Waiting for other players...");
+            else if (player != null)
+                await player.LastChannel.SendMessageAsync(":alarm_clock: Waiting for other players...");
         }
 
         /// <summary>
@@ -170,6 +173,7 @@ namespace OpenRPG.Game
         public void Attack(IAttackable attacker, IAttackable target, List<string> messages)
         {
             var damage = CalculateDamage(attacker, target);
+
             if (damage <= 0)
             {
                 messages.Add(
@@ -178,11 +182,27 @@ namespace OpenRPG.Game
             else
             {
                 target.Health -= damage;
+
                 if (target.Health <= 0)
                 {
                     target.Health = 0;
                     messages.Add(
                         $":skull_crossbones: **{target.Name}** received {damage} damage from **{attacker.Name}** and died.");
+
+                    var team = GetTargets(target);
+                    var xp = (int) (target.Attack + target.Defend / 2.0 / team.Count);
+
+                    // ReSharper disable once LoopCanBeConvertedToQuery
+                    foreach (var attackable in team)
+                    {
+                        var player = attackable as Player;
+                        var levels = player?.AddExperience(xp);
+                        if (levels > 0)
+                        {
+                            messages.Add(
+                                $":tada: **{attackable.Name}** leveled up and is now level {player.Level}!");
+                        }
+                    }
                 }
                 else
                 {
@@ -200,6 +220,7 @@ namespace OpenRPG.Game
             if (!EveryoneReady || !Active) return;
 
             var messages = new List<string>();
+
             foreach (var attacker in Attackables)
             {
                 if (attacker.Health <= 0) continue;
@@ -220,18 +241,23 @@ namespace OpenRPG.Game
                 }
             }
 
-            ResetActions();
-            await ProgressNpcs();
-
             var winners = GetWinners();
+            string mention = null;
             if (winners != null)
             {
                 var winnerList = string.Join(", ", winners.Select(a => a.Name));
                 messages.Add($"\n:medal: Winners: {winnerList}");
                 Dispose();
             }
+            else
+            {
+                mention = ":clock: %m Next turn. Select your action.";
+            }
 
-            await SendMessage(string.Join("\n", messages));
+            await SendMessage(string.Join("\n", messages), mention);
+
+            ResetActions();
+            await ProgressNpcs();
         }
 
         /// <summary>
@@ -251,6 +277,7 @@ namespace OpenRPG.Game
                 var left = new string(' ', 15 - currentHealth);
                 var checkbox = selected == -1 || a.Health == 0 ? "-" : (selected == i ? "x" : " ");
                 messages.Add($"[{checkbox}] {i + 1}. {a.Name,-15} {a.Health,3} [{current}{left}] {a.MaxHealth,-3}");
+                messages.Add($"       A:{a.Attack,-3} D:{a.Defend,-3} S:{a.Speed,-3}");
             }
         }
 
@@ -264,10 +291,10 @@ namespace OpenRPG.Game
             var messages = new List<string>();
 
             messages.Add("== Attackers ==");
-            AddToList(Attackers.ToArray(), messages, Attackers.Contains(attackable) ? - 1 : Targets[attackable]);
+            AddToList(Attackers.ToArray(), messages, Attackers.Contains(attackable) ? -1 : Targets[attackable]);
             messages.Add(string.Empty);
             messages.Add("== Opponents ==");
-            AddToList(Opponents.ToArray(), messages, Opponents.Contains(attackable) ? - 1 : Targets[attackable]);
+            AddToList(Opponents.ToArray(), messages, Opponents.Contains(attackable) ? -1 : Targets[attackable]);
 
             return $"```\n{string.Join("\n", messages)}\n```";
         }
@@ -298,6 +325,7 @@ namespace OpenRPG.Game
 
             await SendMessage(message);
 
+            if (!Active) return true;
             team.Remove(attackable);
             attackable.Battle = null;
 
@@ -309,20 +337,22 @@ namespace OpenRPG.Game
         /// Send a message to both the attacker and opponent.
         /// </summary>
         /// <param name="message"></param>
+        /// <param name="mention"></param>
         /// <returns></returns>
-        protected async Task SendMessage(string message)
+        protected async Task SendMessage(string message, string mention = null)
         {
-            var sendTo = new List<IMessageChannel>();
-            var players = Attackables
+            var groups = Attackables
                 .Where(a => a is Player)
                 .Cast<Player>()
-                .Where(p => p.LastChannel != null);
+                .Where(p => p.LastChannel != null)
+                .GroupBy(p => p.LastChannel);
 
-            foreach (var player in players)
+            foreach (var group in groups)
             {
-                if (sendTo.Contains(player.LastChannel)) continue;
-                sendTo.Add(player.LastChannel);
-                await player.LastChannel.SendMessageAsync(message);
+                var finalMessage = message;
+                if (mention != null)
+                    finalMessage += $"\n {mention.Replace("%m", string.Join(", ", group.Select(a => a.User.Mention)))}";
+                await group.Key.SendMessageAsync(finalMessage);
             }
         }
 
@@ -336,7 +366,7 @@ namespace OpenRPG.Game
 
             var attackers = string.Join(", ", Attackers.Select(a => $"**{a.Name}**"));
             var opponents = string.Join(", ", Opponents.Select(a => $"**{a.Name}**"));
-            await SendMessage($":crossed_swords: {attackers} started to attack {opponents}!");
+            await SendMessage($":crossed_swords: {attackers} started to attack {opponents}!", ":clock: %m The battle has begun, please select your action.");
             await ProgressNpcs();
         }
 
@@ -345,7 +375,13 @@ namespace OpenRPG.Game
         /// </summary>
         public void Dispose()
         {
-            foreach (var attackable in Attackables) attackable.Battle = null;
+            foreach (var attackable in Attackables)
+            {
+                attackable.Battle = null;
+                var player = attackable as Player;
+                if (player != null) Context.Players.Update(player);
+            }
+            Context.SaveChanges();
             Active = false;
         }
     }
