@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using OpenRPG.Game;
 using OpenRPG.Interfaces;
-
 namespace OpenRPG.Entities
 {
     public class Player : IAttackable
@@ -109,6 +108,7 @@ namespace OpenRPG.Entities
             Experience += amount;
             Points += Level - oldLevel;
             return Level - oldLevel;
+            
         }
 
         public byte CriticalRate { get; set; } = 15;

@@ -11,18 +11,18 @@ namespace OpenRPG.Game
     {
         None,
         Attack
-    }
+    } // No block action ?
 
     public class Battle : IDisposable
     {
         public bool Active;
         public bool Leaveable;
         private readonly Random _random;
-        public List<IAttackable> Attackers;
-        public List<IAttackable> Opponents;
-        public Dictionary<IAttackable, BattleAction> Actions;
-        public Dictionary<IAttackable, int> Targets;
-        public Context Context;
+        public List<IAttackable> Attackers { get; }
+        public List<IAttackable> Opponents { get; }
+        public Dictionary<IAttackable, BattleAction> Actions { get; }
+        public Dictionary<IAttackable, int> Targets { get; }
+        public Context Context { get; }
         public int Turn;
 
         public Battle(Context context, IAttackable attacker, IAttackable opponent)
@@ -98,7 +98,7 @@ namespace OpenRPG.Game
         public async Task SetAction(IAttackable attackable, BattleAction action)
         {
             var player = attackable as Player;
-            var targets = GetTargets(attackable);
+            List<IAttackable> targets = GetTargets(attackable);
             var target = targets.ElementAtOrDefault(Targets[attackable]) ?? targets.First();
 
             if (target.Health <= 0)
