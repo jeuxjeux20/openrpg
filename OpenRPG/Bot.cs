@@ -64,7 +64,7 @@ namespace OpenRPG
         /// Install all the commands.
         /// </summary>
         /// <returns></returns>
-        public async Task InstallCommands()
+        private async Task InstallCommands()
         {
             _map = new DependencyMap();
             _map.Add(this);

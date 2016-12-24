@@ -34,6 +34,7 @@ namespace OpenRPG.Interfaces
         /// </summary>
         int Speed { get; }
 
+        byte CriticalRate { get; set; }
         /// <summary>
         /// The battle where the user is currently in.
         /// </summary>

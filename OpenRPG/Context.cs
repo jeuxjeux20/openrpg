@@ -10,6 +10,6 @@ namespace OpenRPG
         public DbSet<Player> PlayerItems { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseMySql(@"Server=localhost;database=openrpg;uid=root;pwd=pass;");
+            => optionsBuilder.UseMySql($@"Server={ConnectionDefaults.SQLHost};database={ConnectionDefaults.SQLDatabase};uid={ConnectionDefaults.SQLUsername};pwd={ConnectionDefaults.SQLPass};"); 
     }
 }

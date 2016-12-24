@@ -11,18 +11,18 @@ namespace OpenRPG.Game
     {
         None,
         Attack
-    }
+    } // No block action ?
 
     public class Battle : IDisposable
     {
         public bool Active;
         public bool Leaveable;
         private readonly Random _random;
-        public List<IAttackable> Attackers;
-        public List<IAttackable> Opponents;
-        public Dictionary<IAttackable, BattleAction> Actions;
-        public Dictionary<IAttackable, int> Targets;
-        public Context Context;
+        public List<IAttackable> Attackers { get; }
+        public List<IAttackable> Opponents { get; }
+        public Dictionary<IAttackable, BattleAction> Actions { get; }
+        public Dictionary<IAttackable, int> Targets { get; }
+        public Context Context { get; }
         public int Turn;
 
         public Battle(Context context, IAttackable attacker, IAttackable opponent)
@@ -98,7 +98,7 @@ namespace OpenRPG.Game
         public async Task SetAction(IAttackable attackable, BattleAction action)
         {
             var player = attackable as Player;
-            var targets = GetTargets(attackable);
+            List<IAttackable> targets = GetTargets(attackable);
             var target = targets.ElementAtOrDefault(Targets[attackable]) ?? targets.First();
 
             if (target.Health <= 0)
@@ -137,11 +137,13 @@ namespace OpenRPG.Game
         /// <param name="attacker"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public int CalculateDamage(IAttackable attacker, IAttackable target)
+        public Tuple<int,bool> CalculateDamage(IAttackable attacker, IAttackable target)
         {
             var damage = attacker.Attack / 2 + _random.Next(0, attacker.Attack / 2);
             var blocked = _random.Next(0, target.Defend / 2);
-            return Math.Max(damage - blocked, 0);
+            bool isCritical = new Random(DateTime.Now.Millisecond).Next(0, 100) <= attacker.CriticalRate;
+            var criticalRatio = isCritical ? 1.25 : 1;
+            return new Tuple<int, bool>(Math.Max(damage - blocked, 0),isCritical);
         }
 
         /// <summary>
@@ -173,21 +175,21 @@ namespace OpenRPG.Game
         public void Attack(IAttackable attacker, IAttackable target, List<string> messages)
         {
             var damage = CalculateDamage(attacker, target);
-
-            if (damage <= 0)
+            var criticalString = damage.Item2 ? "'s CRITICAL hit" : "";
+            if (damage.Item1 <= 0)
             {
                 messages.Add(
-                    $":shield: **{target.Name}** ({target.Health} HP) blocked the incoming damage from **{attacker.Name}**.");
+                    $":shield: **{target.Name}** ({target.Health} HP) blocked the incoming damage from **{attacker.Name + criticalString}**.");
             }
             else
             {
-                target.Health -= damage;
+                target.Health -= damage.Item1;
 
                 if (target.Health <= 0)
                 {
                     target.Health = 0;
                     messages.Add(
-                        $":skull_crossbones: **{target.Name}** received {damage} damage from **{attacker.Name}** and died.");
+                        $":skull_crossbones: **{target.Name}** received {damage} damage from **{attacker.Name + criticalString}** and died.");
 
                     var team = GetTargets(target);
                     var xp = (int) (target.Attack + target.Defend / 2.0 / team.Count);
@@ -207,7 +209,7 @@ namespace OpenRPG.Game
                 else
                 {
                     messages.Add(
-                        $":crossed_swords: **{target.Name}** ({target.Health} HP) received {damage} damage from **{attacker.Name}**.");
+                        $":crossed_swords: **{target.Name}** ({target.Health} HP) received {damage} damage from **{attacker.Name + criticalString}**.");
                 }
             }
         }
@@ -237,7 +239,7 @@ namespace OpenRPG.Game
                         Attack(attacker, target, messages);
                         break;
                     default:
-                        throw new InvalidProgramException("The action is not implemented yet.");
+                        throw new InvalidProgramException($"The action is not implemented yet. | {nameof(action)}");
                 }
             }
 
@@ -276,6 +278,7 @@ namespace OpenRPG.Game
                 var current = new string('x', currentHealth);
                 var left = new string(' ', 15 - currentHealth);
                 var checkbox = selected == -1 || a.Health == 0 ? "-" : (selected == i ? "x" : " ");
+                // TODO: Make this clearer (lol rider/resharper will put this in blue)
                 messages.Add($"[{checkbox}] {i + 1}. {a.Name,-15} {a.Health,3} [{current + left}] {a.MaxHealth,-3}");
                 messages.Add($"       A:{a.Attack,-3} D:{a.Defend,-3} S:{a.Speed,-3}");
             }
@@ -288,9 +291,8 @@ namespace OpenRPG.Game
         /// <returns></returns>
         public string GetList(IAttackable attackable)
         {
-            var messages = new List<string>();
+            var messages = new List<string> {"== Attackers =="};
 
-            messages.Add("== Attackers ==");
             AddToList(Attackers.ToArray(), messages, Attackers.Contains(attackable) ? -1 : Targets[attackable]);
             messages.Add(string.Empty);
             messages.Add("== Opponents ==");
@@ -305,7 +307,7 @@ namespace OpenRPG.Game
         /// <returns></returns>
         public async Task<bool> Leave(IAttackable attackable)
         {
-            if (!Attackables.Contains(attackable)) throw new ArgumentException("The attackable is not in this battle!");
+            if (!Attackables.Contains(attackable)) throw new ArgumentException("The attackable is not in this battle!"); // lol this "attackable"
 
             if (!Leaveable)
             {
